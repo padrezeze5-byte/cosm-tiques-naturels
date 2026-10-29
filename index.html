@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>mon panier</h1>
+<div id="panierAffichage"></div>
+<p id="totalPanier"></p>
+<button id="btnVider">vider le panier</button>
+<button id="btnTrier">Trier par prix</button>
+<div class="produits" id="listeProduits"></div>
+<button id="btnPromo">Voir la promo</button>
+<p id="message"></p>
+<h2>contactez nous</h2>
+<form>
+    <label>votre nom :</label>
+    <input type="text" id="nomInput">
+ 
+    <label>votre message</label>
+    <textarea id="messageInput"></textarea>
+
+    <button type="button" id="btnEnvoyer">envoyer</button>
+</form>
+<p id="confirmation"></p>
+
+<script>
+  class Produit {
+  constructor(nom, prix, stock, image) {
+    this.nom = nom;
+    this.prix = prix;
+    this.stock = stock;
+    this.image = image;
+  }
+
+  estDisponible() {
+    return this.stock > 0;
+  }
+}
+
+let produits = [
+  new Produit("Savon au karité", 2000, 5, "images/savon.jpg"),
+  new Produit("Huile de coco", 3000, 0, "images/coco.jpg"),
+  new Produit("Beurre de cacao", 2500, 3, "images/cacao.jpg")
+];
+    
+
+  let panier = JSON.parse(localStorage.getItem("monPanier")) || [];
+
+  let conteneur = document.getElementById("listeProduits");
+
+  for (let i = 0; i < produits.length; i++) {
+    let p = produits[i];
+    let etatBouton = p.estDisponible()? "" : "disabled";
+    conteneur.innerHTML += "<div class='produit'><img src='" + p.image + "' alt='" + p.nom + "'><h3>" + p.nom + "</h3><p>" + p.prix + " FCFA</p><button class='btnAjouter' data-index='" + i +"' " + etatBouton +">Ajouter au panier</button></div>";
+  }
+
+  function ajouterAuPanier(produit) {
+  let articleExistant = null;
+
+  for (let i = 0; i < panier.length; i++) {
+    if (panier[i].nom === produit.nom) {
+      articleExistant = panier[i];
+    }
+  }
+
+  if (articleExistant) {
+    articleExistant.quantite += 1;
+  } else {
+    let nouvelArticle = { nom: produit.nom, prix: produit.prix, quantite: 1 };
+    panier.push(nouvelArticle);
+  }
+
+  sauvegarderPanier();
+  afficherPanier();
+}
+
+function afficherPanier() {
+  let panierDiv = document.getElementById("panierAffichage");
+  panierDiv.innerHTML = "";
+
+  let total = 0;
+
+  for (let i = 0; i < panier.length; i++) {
+    let article = panier[i];
+    let sousTotal = article.prix * article.quantite;
+    panierDiv.innerHTML += "<p>" + article.nom + " - " + sousTotal + " FCFA <button class='btnMoins' data-index='" + i + "'>-</button> " + article.quantite + " <button class='btnPlus' data-index='" + i + "'>+</button> <button class='btnRetirer' data-index='" + i + "'>Retirer</button></p>";
+    total += sousTotal;
+  }
+
+  document.getElementById("totalPanier").textContent = "Total : " + total + " FCFA";
+
+  let boutonsRetirer = document.querySelectorAll(".btnRetirer");
+  for (let i = 0; i < boutonsRetirer.length; i++) {
+    boutonsRetirer[i].addEventListener("click", function() {
+      let index = this.getAttribute("data-index");
+      panier.splice(index, 1);
+      sauvegarderPanier();
+      afficherPanier();
+    });
+  }
+
+  let boutonsPlus = document.querySelectorAll(".btnPlus");
+  for (let i = 0; i < boutonsPlus.length; i++) {
+    boutonsPlus[i].addEventListener("click", function() {
+      let index = this.getAttribute("data-index");
+      panier[index].quantite += 1;
+      sauvegarderPanier();
+      afficherPanier();
+    });
+  }
+
+  let boutonsMoins = document.querySelectorAll(".btnMoins");
+  for (let i = 0; i < boutonsMoins.length; i++) {
+    boutonsMoins[i].addEventListener("click", function() {
+      let index = this.getAttribute("data-index");
+      panier[index].quantite -= 1;
+
+      if (panier[index].quantite <= 0) {
+        panier.splice(index, 1);
+      }
+
+      sauvegarderPanier();
+      afficherPanier();
+    });
+  }
+}
+
+  let boutons = document.querySelectorAll(".btnAjouter");
+
+  for (let i = 0; i < boutons.length; i++) {
+    boutons[i].addEventListener("click", function() {
+      let index = this.getAttribute("data-index");
+      let produit = produits[index];
+
+      if (produit.estDisponible()) {
+        ajouterAuPanier(produit);
+      } else {
+        alert(produit.nom + "est en rupture de stock !");
+     }
+let texteBouton = p.stock > 0 ? "Ajouter au panier" : "Rupture de stock;"
+conteneur.innerHTML += "<div class='produit'><img src='" + p.image + "' alt='" + p.nom + "'><h3>" + p.nom + "</h3><p>" + p.prix + " FCFA</p><button class='btnAjouter' data-index='" + i + "' " + etatBouton + ">" + texteBouton + "</button></div>";
+});
+  }
+
+  function envoyerMessage() {
+  let nom = document.getElementById("nomInput").value;
+  let message = document.getElementById("messageInput").value;
+
+  if (nom === "" || message === "") {
+    document.getElementById("confirmation").textContent = "Merci de remplir tous les champs !";
+  } else {
+    document.getElementById("confirmation").textContent = "Merci " + nom + ", votre message a bien été envoyé !";
+    setTimeout(function() {
+      document.getElementById("confirmation").textContent = "";
+    }, 3000);
+  }
+}
+
+document.getElementById("btnEnvoyer").addEventListener("click", envoyerMessage);
+
+document.getElementById("btnVider").addEventListener("click", function() {
+  panier = [];
+  sauvegarderPanier();
+  afficherPanier();
+});
+
+document.getElementById("btnTrier").addEventListener("click", function() {
+  produits.sort(function(a, b) {
+    return a.prix - b.prix;
+  });
+
+  conteneur.innerHTML = "";
+
+  for (let i = 0; i < produits.length; i++) {
+    let p = produits[i];
+    let etatBouton = p.stock > 0 ? "" : "disabled";
+    let texteBouton = p.stock > 0 ? "Ajouter au panier" : "Rupture de stock";
+    conteneur.innerHTML += "<div class='produit'><img src='" + p.image + "' alt='" + p.nom + "'><h3>" + p.nom + "</h3><p>" + p.prix + " FCFA</p><button class='btnAjouter' data-index='" + i + "' " + etatBouton + ">" + texteBouton + "</button></div>";
+  }
+
+  boutons = document.querySelectorAll(".btnAjouter");
+
+  for (let i = 0; i < boutons.length; i++) {
+    boutons[i].addEventListener("click", function() {
+      let index = this.getAttribute("data-index");
+      let produit = produits[index];
+
+      if (produit.stock > 0) {
+        ajouterAuPanier(produit);
+      } else {
+        alert(produit.nom + " est en rupture de stock !");
+      }
+    });
+  }
+});
+
+function sauvegarderPanier() {
+  localStorage.setItem("mon panier", JSON.stringify("monPanier"));
+}
+
+  afficherPanier();
+
+  let savon = new Produit("Savon au karité", 2000, 5, "images/savon.jpg");
+
+  console.log(savon.nom);
+  console.log(savon.estDisponible());
+
+  let test = new Produit("Test", 1000, 2, "test.jpg");
+  console.log(test.nom)
+  console.log(test.estDisponible());
+
+  let texte = JSON.stringify(test);
+let testRecupere = JSON.parse(texte);
+console.log(testRecupere.nom);
+console.log(testRecupere.estDisponible());
+
+let disponibles = produits.filter(function(p) {
+  return p.estDisponible();
+});
+
+console.log(disponibles);let disponibles = produits.filter(function(p) {
+  return p.estDisponible();
+});
+
+console.log(disponibles);
+</script>
+ 
+</body>
+</html>
